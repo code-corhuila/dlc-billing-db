@@ -1,25 +1,168 @@
-# dlc-billing-db
+# DI LUCCA — Billing Database
 
-> billing bounded context: database (schema, seeds, migrations)
+Database migrations and schema definitions for the Billing bounded context of **DI LUCCA Dental Care & Technology**.
 
-Part of the **LMS Library** distributed system — team `lms-library`, Grupo 2.
-Governance and documentation live in [`library-docs`](https://github.com/code-corhuila/library-docs).
+Developed as part of the Distributed Systems 2026-B project at CORHUILA.
 
-## Branching
+## Project Overview
 
-Three permanent branches. **None of them accepts a direct commit** — you enter through a child
-branch and leave through a Pull Request.
+This repository manages the PostgreSQL database structure owned by the DI LUCCA Billing microservice.
 
+It contains version-controlled Liquibase migrations for database schemas, tables, constraints, indexes, and other database objects.
+
+The Billing database supports procedure pricing, invoice management, manual charges, and payment records as defined in the official project documentation.
+
+## Technology Stack
+
+- PostgreSQL 16
+- Liquibase
+- YAML changelogs
+- SQL
+- Docker for isolated database testing
+
+## Database Architecture
+
+DI LUCCA uses a distributed architecture with separate bounded contexts:
+
+- IAM
+- Patients
+- Appointments
+- Clinical
+- Billing
+
+Billing owns the `billing` schema in PostgreSQL.
+
+Database changes must respect the boundaries of the Billing service and must not introduce undocumented cross-service dependencies.
+
+## Migration Structure
+
+The repository organizes Liquibase migrations into the following directories:
+
+```text
+changelog/
+  changelog-master.yaml
+
+01_ddl/
+  00_extensions/
+  01_schemas/
+  02_types/
+  03_tables/
+  04_alter/
+  05_views/
+  06_materialized_views/
+  07_functions/
+  08_procedures/
+  09_triggers/
+  10_indexes/
+
+02_dml/
+03_dcl/
+04_tcl/
+05_rollbacks/
 ```
-develop  <--PR--  feat/... fix/... chore/...
-qa       <--PR--  qa/...
-main     <--PR--  release/...  hotfix/...
-```
 
-Promotion happens **by re-application** (`git cherry-pick -x`), never by merging one permanent
-branch into another: `merge develop -> qa` and `merge qa -> main` do not exist in this model.
+The main changelog is located at:
 
-`main` requires **1 approval from `ariel5253`**. On `develop` and `qa` the team sets its own review
-rule.
+`changelog/changelog-master.yaml`
 
-Full policy: `00-governance/branching-policy.md` in `library-docs`.
+Liquibase processes the included migration files according to their declared order.
+
+## Implemented Database Migrations
+
+### Procedure Price Catalog
+
+The initial Billing database migrations include:
+
+- PostgreSQL `btree_gist` extension.
+- Creation of the `billing` schema.
+- Creation of the `billing.procedure_prices` table.
+- Positive exact monetary values using `NUMERIC(14,2)`.
+- COP currency validation.
+- Procedure price version uniqueness.
+- Validity period validation.
+- Active price validity exclusion constraints using GiST.
+- Audit fields for price records.
+
+The exclusion constraint prevents overlapping active validity periods for the same procedure.
+
+Validity periods use start-inclusive and end-exclusive intervals.
+
+### Pending Database Work
+
+- Additional price rules.
+- Manual charges.
+- Invoice persistence.
+- Payment records.
+- Integration with the Billing API.
+- Additional database integrity and concurrency tests.
+
+These components must follow the official DI LUCCA contracts and data model.
+
+## Migration Validation
+
+The initial procedure price migrations were validated using:
+
+- PostgreSQL 16.
+- Liquibase 4.31.1.
+- An isolated Docker test environment.
+
+Verified operations:
+
+- Liquibase changelog validation.
+- Successful execution of four changesets.
+- PostgreSQL constraint creation.
+- Rejection of overlapping active validity periods.
+- Acceptance of adjacent validity periods.
+- Confirmation that Liquibase reports no pending changes.
+
+These validations were performed in a temporary test environment, not in production.
+
+## Related Repositories
+
+- [DI LUCCA Documentation](https://github.com/code-corhuila/dlc-docs)
+- [Billing API](https://github.com/code-corhuila/dlc-billing-api)
+- [Billing Portal](https://github.com/code-corhuila/dlc-billing-portal)
+- [API Gateway](https://github.com/code-corhuila/dlc-api-gateway)
+- [Infrastructure](https://github.com/code-corhuila/dlc-infra)
+
+## Branching and Contributions
+
+The project uses three permanent branches:
+
+- `develop` — development integration.
+- `qa` — quality assurance.
+- `main` — release branch.
+
+Changes are developed in short-lived branches and submitted through Pull Requests.
+
+Contribution guidelines:
+
+- Follow Conventional Commits.
+- Keep Pull Requests within 400 changed lines.
+- Validate migrations before requesting integration.
+- Preserve existing data and avoid destructive changes.
+- Use explicit and reviewed rollback procedures.
+- Do not modify database objects owned by other bounded contexts.
+- Follow the current DI LUCCA governance documentation.
+
+## Documentation
+
+Official project documentation:
+
+https://github.com/code-corhuila/dlc-docs
+
+Billing data model:
+
+`09-microservices/services/06-billing-service/data-model.md`
+
+Billing API contract:
+
+`07-api/contracts/openapi/billing-service.yaml`
+
+## Project
+
+**DI LUCCA Dental Care & Technology**
+
+CORHUILA — Systems Engineering
+
+Distributed Systems — 2026-B
