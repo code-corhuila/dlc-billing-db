@@ -1,1 +1,11 @@
-databaseChangeLog: []
+databaseChangeLog:
+  - changeSet:
+      id: billing-000-enable-btree-gist
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS btree_gist
+      rollback:
+        - sql:
+            sql: SELECT 1

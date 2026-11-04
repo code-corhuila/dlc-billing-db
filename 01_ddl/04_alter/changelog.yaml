@@ -1,1 +1,20 @@
-databaseChangeLog: []
+databaseChangeLog:
+  - changeSet:
+      id: billing-003-prevent-overlapping-procedure-prices
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE billing.procedure_prices
+              ADD CONSTRAINT ex_procedure_price_active_validity
+              EXCLUDE USING GIST (
+                  procedure_code WITH =,
+                  tstzrange(valid_from, valid_to, '[)') WITH &&
+              )
+              WHERE (status = 'ACTIVE');
+      rollback:
+        - sql:
+            sql: |
+              ALTER TABLE billing.procedure_prices
+              DROP CONSTRAINT IF EXISTS ex_procedure_price_active_validity;

@@ -1,1 +1,38 @@
-databaseChangeLog: []
+databaseChangeLog:
+  - changeSet:
+      id: billing-002-create-procedure-prices
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE billing.procedure_prices (
+                  price_id UUID PRIMARY KEY,
+                  procedure_code VARCHAR(80) NOT NULL,
+                  name VARCHAR(255) NOT NULL,
+                  base_price NUMERIC(14,2) NOT NULL,
+                  currency VARCHAR(3) NOT NULL DEFAULT 'COP',
+                  valid_from TIMESTAMPTZ NOT NULL,
+                  valid_to TIMESTAMPTZ,
+                  status VARCHAR(8) NOT NULL DEFAULT 'ACTIVE',
+                  version INTEGER NOT NULL,
+                  created_by UUID NOT NULL,
+                  created_at TIMESTAMPTZ NOT NULL,
+                  updated_at TIMESTAMPTZ NOT NULL,
+
+                  CONSTRAINT chk_procedure_price_positive
+                      CHECK (base_price > 0),
+                  CONSTRAINT chk_procedure_price_currency
+                      CHECK (currency = 'COP'),
+                  CONSTRAINT chk_procedure_price_validity
+                      CHECK (valid_to IS NULL OR valid_to > valid_from),
+                  CONSTRAINT chk_procedure_price_version
+                      CHECK (version >= 1),
+                  CONSTRAINT chk_procedure_price_status
+                      CHECK (status IN ('ACTIVE', 'INACTIVE')),
+                  CONSTRAINT uq_procedure_price_version
+                      UNIQUE (procedure_code, version)
+              );
+      rollback:
+        - sql:
+            sql: DROP TABLE IF EXISTS billing.procedure_prices
