@@ -29,6 +29,11 @@ BEGIN
     DELETE FROM billing.invoice_items;
     RAISE EXCEPTION 'Read runtime removed invoice sources';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN
+    INSERT INTO billing.invoices(invoice_id,patient_id,total,balance,created_by)
+    VALUES (gen_random_uuid(),gen_random_uuid(),10,10,gen_random_uuid());
+    RAISE EXCEPTION 'Read runtime created an unaudited invoice';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;
 RESET ROLE;
 DO $$
@@ -44,14 +49,20 @@ BEGIN
     RAISE EXCEPTION 'Issued invoice without financial identity accepted';
   EXCEPTION WHEN check_violation THEN NULL; END;
   BEGIN
-    INSERT INTO billing.invoice_items SELECT * FROM billing.invoice_items;
+    INSERT INTO billing.invoices(invoice_id,patient_id,total,balance,created_by)
+    VALUES ('50000000-0000-4000-8000-000000000002','40000000-0000-4000-8000-000000000003',10.01,10.01,gen_random_uuid());
+    INSERT INTO billing.invoice_items(invoice_id,patient_id,item_id)
+    SELECT '50000000-0000-4000-8000-000000000002',patient_id,item_id FROM billing.invoice_items;
     RAISE EXCEPTION 'Duplicate source allocation accepted';
   EXCEPTION WHEN unique_violation THEN NULL; END;
+  DELETE FROM billing.invoice_items;
+  INSERT INTO billing.invoices(invoice_id,patient_id,total,balance,created_by)
+  VALUES ('50000000-0000-4000-8000-000000000003','50000000-0000-4000-8000-000000000004',10.01,10.01,gen_random_uuid());
   BEGIN
     INSERT INTO billing.invoice_items(invoice_id,patient_id,item_id)
-    VALUES ('50000000-0000-4000-8000-000000000001',gen_random_uuid(),
+    VALUES ('50000000-0000-4000-8000-000000000003','50000000-0000-4000-8000-000000000004',
       '40000000-0000-4000-8000-000000000004');
     RAISE EXCEPTION 'Cross-patient allocation accepted';
-  EXCEPTION WHEN foreign_key_violation OR unique_violation THEN NULL; END;
+  EXCEPTION WHEN foreign_key_violation THEN NULL; END;
 END $$;
 ROLLBACK;

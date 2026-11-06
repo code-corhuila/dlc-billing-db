@@ -138,3 +138,15 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: DROP TABLE billing.billable_items; DROP TABLE billing.encounter_accounts;
+
+  - changeSet:
+      id: billing-010-invoice-read-storage
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 010_invoice_storage.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sql:
+            sql: DROP TABLE billing.invoice_items; DROP TABLE billing.invoices; ALTER TABLE billing.billable_items DROP CONSTRAINT uq_billable_item_patient;
