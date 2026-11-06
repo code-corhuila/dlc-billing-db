@@ -59,7 +59,7 @@ BEGIN
       SELECT gen_random_uuid(),encounter_account_id,patient_id,appointment_id,procedure_id,
        gen_random_uuid(),'ADDITIONAL_MATERIAL','Invalid quantity',q,1,created_by FROM billing.billable_items;
       RAISE EXCEPTION 'Invalid quantity accepted';
-    EXCEPTION WHEN check_violation THEN NULL; END;
+    EXCEPTION WHEN check_violation OR numeric_value_out_of_range THEN NULL; END;
   END LOOP;
   FOREACH price IN ARRAY ARRAY[0,-1,1.001,1000000000000,'NaN'::numeric] LOOP
     BEGIN
@@ -69,7 +69,7 @@ BEGIN
       SELECT gen_random_uuid(),encounter_account_id,patient_id,appointment_id,procedure_id,
        gen_random_uuid(),'ADDITIONAL_MATERIAL','Invalid price',1,price,created_by FROM billing.billable_items;
       RAISE EXCEPTION 'Invalid unit price accepted';
-    EXCEPTION WHEN check_violation THEN NULL; END;
+    EXCEPTION WHEN check_violation OR numeric_value_out_of_range THEN NULL; END;
   END LOOP;
   BEGIN
     INSERT INTO billing.billable_items
