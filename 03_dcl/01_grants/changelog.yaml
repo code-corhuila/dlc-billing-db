@@ -11,3 +11,14 @@ databaseChangeLog:
         - sqlFile:
             path: 007_runtime_permissions_rollback.sql
             relativeToChangelogFile: true
+
+  - changeSet:
+      id: billing-009-billable-snapshot-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT, INSERT ON billing.encounter_accounts, billing.billable_items TO billing_runtime;
+      rollback:
+        - sql:
+            sql: REVOKE SELECT, INSERT ON billing.encounter_accounts, billing.billable_items FROM billing_runtime;
