@@ -20,6 +20,8 @@ BEGIN
 END $$;
 
 BEGIN;
+CREATE SCHEMA billing_other_owner_probe;
+CREATE TABLE billing_other_owner_probe.private_data(id int);
 SET LOCAL ROLE billing_runtime;
 INSERT INTO billing.procedure_prices
 (price_id,procedure_code,name,base_price,currency,valid_from,status,version,created_by,created_at,updated_at)
@@ -47,6 +49,10 @@ BEGIN
   BEGIN
     UPDATE billing.procedure_prices SET base_price=20 WHERE procedure_code='PERMISSION-CHECK';
     RAISE EXCEPTION 'Runtime rewrote a historical amount';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN
+    PERFORM 1 FROM billing_other_owner_probe.private_data;
+    RAISE EXCEPTION 'Runtime read another owner schema';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN
     CREATE TABLE billing.forbidden_table(id int);
