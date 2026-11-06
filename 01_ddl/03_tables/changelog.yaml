@@ -126,3 +126,15 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: DROP TABLE IF EXISTS billing.additional_price_rules;
+
+  - changeSet:
+      id: billing-008-billable-snapshots
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 008_billable_snapshots.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sql:
+            sql: DROP TABLE billing.billable_items; DROP TABLE billing.encounter_accounts;
