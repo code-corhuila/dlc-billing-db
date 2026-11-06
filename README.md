@@ -87,9 +87,15 @@ The exclusion constraint prevents overlapping active validity periods for the sa
 
 Validity periods use start-inclusive and end-exclusive intervals.
 
+### Additional Price Rules
+
+The local `billing-006-create-additional-price-rules` migration adds `billing.additional_price_rules` with positive exact COP unit prices, the four contract item types, version uniqueness, audit fields, and a GiST exclusion constraint for active validity intervals. Historical approval metadata is retained; new API writes must use `requiresApproval: false`.
+
+Liquibase 4.31.1 validated and applied this migration on the isolated PostgreSQL 16 test database. Integration tests verified positive prices, allowed item types, valid versions, unique source/version pairs, rejection of overlapping validity, and acceptance of adjacent validity intervals. The database now has six applied changesets. These are local validation results, not deployment evidence.
+
 ### Pending Database Work
 
-- Additional price rules.
+- Additional rule write integration.
 - Manual charges.
 - Invoice persistence.
 - Payment records.
