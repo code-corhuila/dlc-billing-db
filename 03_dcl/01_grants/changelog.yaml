@@ -33,3 +33,14 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: REVOKE SELECT ON billing.invoices, billing.invoice_items FROM billing_runtime;
+
+  - changeSet:
+      id: billing-013-invoice-draft-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT INSERT ON billing.invoices, billing.invoice_items TO billing_runtime; GRANT SELECT, INSERT ON billing.invoice_appointment_validations TO billing_runtime; GRANT UPDATE(status,version,updated_at) ON billing.billable_items TO billing_runtime;
+      rollback:
+        - sql:
+            sql: REVOKE INSERT ON billing.invoices, billing.invoice_items FROM billing_runtime; REVOKE SELECT, INSERT ON billing.invoice_appointment_validations FROM billing_runtime; REVOKE UPDATE(status,version,updated_at) ON billing.billable_items FROM billing_runtime;

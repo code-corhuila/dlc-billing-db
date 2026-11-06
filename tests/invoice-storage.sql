@@ -29,11 +29,6 @@ BEGIN
     DELETE FROM billing.invoice_items;
     RAISE EXCEPTION 'Read runtime removed invoice sources';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
-  BEGIN
-    INSERT INTO billing.invoices(invoice_id,patient_id,total,balance,created_by)
-    VALUES (gen_random_uuid(),gen_random_uuid(),10,10,gen_random_uuid());
-    RAISE EXCEPTION 'Read runtime created an unaudited invoice';
-  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;
 RESET ROLE;
 DO $$
