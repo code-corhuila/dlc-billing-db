@@ -1,1 +1,13 @@
-databaseChangeLog: []
+databaseChangeLog:
+  - changeSet:
+      id: billing-007-runtime-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 007_runtime_permissions.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sqlFile:
+            path: 007_runtime_permissions_rollback.sql
+            relativeToChangelogFile: true
