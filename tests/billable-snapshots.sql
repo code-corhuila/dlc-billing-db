@@ -22,11 +22,15 @@ BEGIN
     RAISE EXCEPTION 'Exact per-line half-up rounding failed';
   END IF;
   BEGIN
-    INSERT INTO billing.encounter_accounts SELECT * FROM billing.encounter_accounts;
+    INSERT INTO billing.encounter_accounts
+    (encounter_account_id,clinical_record_id,consultation_id,appointment_id,patient_id)
+    SELECT gen_random_uuid(),clinical_record_id,consultation_id,appointment_id,patient_id
+      FROM billing.encounter_accounts;
     RAISE EXCEPTION 'Duplicate encounter accepted';
   EXCEPTION WHEN unique_violation THEN NULL; END;
   BEGIN
     sample.item_id := '30000000-0000-4000-8000-000000000001';
+    sample.item_type := 'ADDITIONAL_MATERIAL';
     INSERT INTO billing.billable_items
     (item_id,encounter_account_id,patient_id,appointment_id,procedure_id,source_record_id,
      item_type,description,quantity,unit_price,currency,approval_required,catalog_version,
@@ -37,6 +41,14 @@ BEGIN
       sample.catalog_version,sample.justification,sample.created_by,sample.created_at,
       sample.updated_at,sample.version,sample.status;
     RAISE EXCEPTION 'Duplicate source accepted';
+  EXCEPTION WHEN unique_violation THEN NULL; END;
+  BEGIN
+    INSERT INTO billing.billable_items
+    (item_id,encounter_account_id,patient_id,appointment_id,procedure_id,source_record_id,
+     item_type,description,quantity,unit_price,created_by)
+    SELECT gen_random_uuid(),encounter_account_id,patient_id,appointment_id,procedure_id,
+      gen_random_uuid(),'BASE_PROCEDURE','Second base source',1,1,created_by FROM billing.billable_items;
+    RAISE EXCEPTION 'Second base snapshot accepted';
   EXCEPTION WHEN unique_violation THEN NULL; END;
   BEGIN
     UPDATE billing.billable_items SET unit_price=99;
