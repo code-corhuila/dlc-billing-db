@@ -150,3 +150,16 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: DROP TABLE billing.invoice_items; DROP TABLE billing.invoices; ALTER TABLE billing.billable_items DROP CONSTRAINT uq_billable_item_patient;
+
+  - changeSet:
+      id: billing-012-invoice-draft-allocation
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 012_invoice_draft_allocation.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sql:
+            sql: DROP TRIGGER protect_billable_allocation ON billing.billable_items; DROP FUNCTION billing.protect_billable_allocation(); DROP TABLE billing.invoice_appointment_validations;
