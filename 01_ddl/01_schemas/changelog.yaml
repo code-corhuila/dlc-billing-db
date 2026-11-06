@@ -3,6 +3,12 @@ databaseChangeLog:
       id: billing-001-create-schema
       author: di-lucca
       dbms: postgresql
+      preConditions:
+        - onFail: MARK_RAN
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT count(*) FROM pg_namespace WHERE nspname = 'billing'
       changes:
         - sql:
             sql: CREATE SCHEMA IF NOT EXISTS billing
