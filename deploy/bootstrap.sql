@@ -17,6 +17,19 @@ BEGIN
     RAISE EXCEPTION 'Existing Billing schema has another owner; reviewed ownership migration required';
   END IF;
 END $$;
-CREATE EXTENSION IF NOT EXISTS btree_gist;
+-- Match the existing Appointments owner prerequisite on a fresh shared database.
+-- Preserve installed extensions: relocating an existing deployment is a DBA decision.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_extension WHERE extname='btree_gist') THEN
+    IF EXISTS (SELECT FROM pg_namespace WHERE nspname='appointments_extensions'
+        AND nspowner <> current_user::regrole) THEN
+      RAISE EXCEPTION 'Existing extension schema has another owner; DBA review required';
+    END IF;
+    CREATE SCHEMA IF NOT EXISTS appointments_extensions;
+    REVOKE ALL ON SCHEMA appointments_extensions FROM PUBLIC;
+    CREATE EXTENSION btree_gist WITH SCHEMA appointments_extensions;
+  END IF;
+END $$;
 CREATE SCHEMA IF NOT EXISTS billing AUTHORIZATION billing_migrator;
 REVOKE ALL ON SCHEMA billing FROM PUBLIC;
