@@ -95,7 +95,7 @@ Liquibase 4.31.1 validated and applied this migration on the isolated PostgreSQL
 
 ### Pending Database Work
 
-- Additional rule write integration.
+- Integrated QA validation of additional rule writes.
 - Manual charges.
 - Invoice persistence.
 - Payment records.
