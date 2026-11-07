@@ -239,3 +239,13 @@ databaseChangeLog:
             path: 026_price_corrections.sql
             relativeToChangelogFile: true
             splitStatements: false
+
+  - changeSet:
+      id: billing-028-legacy-manual-price-guard
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 028_legacy_manual_price_guard.sql
+            relativeToChangelogFile: true
+            splitStatements: false
