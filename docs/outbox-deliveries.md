@@ -16,3 +16,8 @@ remains denied and financial history still has its own foreign-key guards.
 Six SQL suites and repeat migration passed on disposable PostgreSQL 16 using
 the limited runtime identity. Actual RabbitMQ confirms/recovery require the
 following API publisher and real broker integration increments.
+
+Upgrade verification also passed from pre-relay Billing DB 1f35d18: an existing
+committed event received exactly one PENDING row, its body stayed byte-for-byte
+unchanged, and repeat migration introduced no duplicate. The disposable API
+integration test tests/integration/test_outbox_upgrade.py finished in 92.541 s.
