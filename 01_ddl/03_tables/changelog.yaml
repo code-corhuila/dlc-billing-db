@@ -199,3 +199,13 @@ databaseChangeLog:
             path: 018_payments.sql
             relativeToChangelogFile: true
             splitStatements: false
+
+  - changeSet:
+      id: billing-020-encounter-admissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 020_encounter_admissions.sql
+            relativeToChangelogFile: true
+            splitStatements: false
