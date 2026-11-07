@@ -229,3 +229,13 @@ databaseChangeLog:
             path: 024_manual_charges.sql
             relativeToChangelogFile: true
             splitStatements: false
+
+  - changeSet:
+      id: billing-026-price-corrections
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 026_price_corrections.sql
+            relativeToChangelogFile: true
+            splitStatements: false
