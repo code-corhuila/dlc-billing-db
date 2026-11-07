@@ -10,8 +10,8 @@ item_type,description,quantity,unit_price,created_by,status)
 VALUES ('40000000-0000-4000-8000-000000000004','40000000-0000-4000-8000-000000000001',
 '40000000-0000-4000-8000-000000000003','40000000-0000-4000-8000-000000000002',
 gen_random_uuid(),gen_random_uuid(),'BASE_PROCEDURE','Invoice test snapshot',1,10.01,gen_random_uuid(),'BILLED');
-INSERT INTO billing.invoices(invoice_id,patient_id,total,balance,created_by)
-VALUES ('50000000-0000-4000-8000-000000000001','40000000-0000-4000-8000-000000000003',10.01,10.01,gen_random_uuid());
+INSERT INTO billing.invoices(invoice_id,patient_id,total,balance,created_by,created_at)
+VALUES ('50000000-0000-4000-8000-000000000001','40000000-0000-4000-8000-000000000003',10.01,10.01,gen_random_uuid(),'2026-11-06T00:00:00Z');
 INSERT INTO billing.invoice_items(invoice_id,patient_id,item_id)
 VALUES ('50000000-0000-4000-8000-000000000001','40000000-0000-4000-8000-000000000003',
 '40000000-0000-4000-8000-000000000004');
