@@ -85,3 +85,11 @@ databaseChangeLog:
       changes:
         - sql:
             sql: GRANT SELECT, INSERT ON billing.encounter_write_gates, billing.encounter_freezes, billing.manual_charge_admissions TO billing_runtime; GRANT UPDATE(freeze_state,freeze_operation_id,version,updated_at) ON billing.encounter_write_gates TO billing_runtime; GRANT UPDATE(state,settlement) ON billing.encounter_freezes TO billing_runtime; GRANT UPDATE(state,resolved_at) ON billing.manual_charge_admissions TO billing_runtime;
+
+  - changeSet:
+      id: billing-023-clinical-source-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT, INSERT ON billing.clinical_inbox, billing.clinical_procedures, billing.clinical_sources, billing.clinical_consultations, billing.clinical_declarations, billing.procedure_charge_receipts, billing.encounter_charge_receipts TO billing_runtime; GRANT UPDATE(projected_at) ON billing.clinical_inbox TO billing_runtime;
