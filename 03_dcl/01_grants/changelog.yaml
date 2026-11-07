@@ -93,3 +93,11 @@ databaseChangeLog:
       changes:
         - sql:
             sql: GRANT SELECT, INSERT ON billing.clinical_inbox, billing.clinical_procedures, billing.clinical_sources, billing.clinical_consultations, billing.clinical_declarations, billing.procedure_charge_receipts, billing.encounter_charge_receipts TO billing_runtime; GRANT UPDATE(projected_at) ON billing.clinical_inbox TO billing_runtime;
+
+  - changeSet:
+      id: billing-025-manual-charge-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT, INSERT ON billing.manual_charges TO billing_runtime; GRANT UPDATE(status,declared_procedure_ids,declared_manual_charge_ids,freeze_state,freeze_operation_id,version,updated_at) ON billing.encounter_accounts TO billing_runtime;
