@@ -66,3 +66,14 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: REVOKE ALL ON billing.outbox_deliveries FROM billing_runtime;
+
+  - changeSet:
+      id: billing-019-payment-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT ON billing.payment_methods TO billing_runtime; GRANT SELECT, INSERT ON billing.payments TO billing_runtime; GRANT UPDATE(balance) ON billing.invoices TO billing_runtime;
+        - sqlFile:
+            path: 019_payment_receipts.sql
+            relativeToChangelogFile: true
