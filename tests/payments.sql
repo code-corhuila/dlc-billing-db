@@ -1,8 +1,10 @@
 ﻿\set ON_ERROR_STOP on
 BEGIN;
+\ir support/invoice-fixture.sql
 INSERT INTO billing.payment_methods(method) VALUES ('SYNTHETIC_LOCAL');
 INSERT INTO billing.invoices(invoice_id,patient_id,total,balance,created_by)
 VALUES ('74000000-0000-4000-8000-000000000001',gen_random_uuid(),10.01,10.01,gen_random_uuid());
+SELECT pg_temp.seed_invoice_items('74000000-0000-4000-8000-000000000001');
 UPDATE billing.invoices SET status='ISSUED',version=2,invoice_number='BIL-payment-test',issued_at=now()
 WHERE invoice_id='74000000-0000-4000-8000-000000000001';
 SET LOCAL ROLE billing_runtime;
