@@ -209,3 +209,33 @@ databaseChangeLog:
             path: 020_encounter_admissions.sql
             relativeToChangelogFile: true
             splitStatements: false
+
+  - changeSet:
+      id: billing-022-clinical-source-storage
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 022_clinical_sources.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: billing-024-manual-charge-storage
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 024_manual_charges.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: billing-026-price-corrections
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 026_price_corrections.sql
+            relativeToChangelogFile: true
+            splitStatements: false
