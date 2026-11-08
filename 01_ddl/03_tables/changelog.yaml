@@ -239,3 +239,33 @@ databaseChangeLog:
             path: 026_price_corrections.sql
             relativeToChangelogFile: true
             splitStatements: false
+
+  - changeSet:
+      id: billing-028-legacy-manual-price-guard
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 028_legacy_manual_price_guard.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: billing-029-financial-correlations
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 029_financial_correlations.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: billing-031-financial-boundaries
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 031_financial_boundaries.sql
+            relativeToChangelogFile: true
+            splitStatements: false
