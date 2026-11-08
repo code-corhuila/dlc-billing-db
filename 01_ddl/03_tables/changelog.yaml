@@ -163,3 +163,29 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: DROP TRIGGER protect_billable_allocation ON billing.billable_items; DROP FUNCTION billing.protect_billable_allocation(); DROP TABLE billing.invoice_appointment_validations;
+
+  - changeSet:
+      id: billing-014-invoice-issuance-storage
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 014_invoice_issuance.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sql:
+            sql: DROP TRIGGER protect_invoice_issuance ON billing.invoices; DROP FUNCTION billing.protect_invoice_issuance(); DROP TABLE billing.invoice_issuances; DROP TABLE billing.outbox_events; ALTER TABLE billing.billable_items DROP COLUMN pricing_authority_role;
+
+  - changeSet:
+      id: billing-016-outbox-deliveries
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 016_outbox_deliveries.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sql:
+            sql: DROP TRIGGER schedule_outbox_delivery ON billing.outbox_events; DROP FUNCTION billing.schedule_outbox_delivery(); DROP TABLE billing.outbox_deliveries; DROP FUNCTION billing.protect_outbox_delivery();

@@ -44,3 +44,25 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: REVOKE INSERT ON billing.invoices, billing.invoice_items FROM billing_runtime; REVOKE SELECT, INSERT ON billing.invoice_appointment_validations FROM billing_runtime; REVOKE UPDATE(status,version,updated_at) ON billing.billable_items FROM billing_runtime;
+
+  - changeSet:
+      id: billing-015-invoice-issuance-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT, INSERT ON billing.outbox_events, billing.invoice_issuances TO billing_runtime; GRANT UPDATE(status,version,updated_at,invoice_number,issued_at) ON billing.invoices TO billing_runtime;
+      rollback:
+        - sql:
+            sql: REVOKE SELECT, INSERT ON billing.outbox_events, billing.invoice_issuances FROM billing_runtime; REVOKE UPDATE(status,version,updated_at,invoice_number,issued_at) ON billing.invoices FROM billing_runtime;
+
+  - changeSet:
+      id: billing-017-outbox-delivery-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT, INSERT ON billing.outbox_deliveries TO billing_runtime; GRANT UPDATE(status,attempts,next_attempt_at,published_at,last_error_code) ON billing.outbox_deliveries TO billing_runtime;
+      rollback:
+        - sql:
+            sql: REVOKE ALL ON billing.outbox_deliveries FROM billing_runtime;
