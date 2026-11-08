@@ -189,3 +189,23 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: DROP TRIGGER schedule_outbox_delivery ON billing.outbox_events; DROP FUNCTION billing.schedule_outbox_delivery(); DROP TABLE billing.outbox_deliveries; DROP FUNCTION billing.protect_outbox_delivery();
+
+  - changeSet:
+      id: billing-018-payment-history
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 018_payments.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: billing-020-encounter-admissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 020_encounter_admissions.sql
+            relativeToChangelogFile: true
+            splitStatements: false
