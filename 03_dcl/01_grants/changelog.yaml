@@ -66,3 +66,22 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: REVOKE ALL ON billing.outbox_deliveries FROM billing_runtime;
+
+  - changeSet:
+      id: billing-019-payment-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT ON billing.payment_methods TO billing_runtime; GRANT SELECT, INSERT ON billing.payments TO billing_runtime; GRANT UPDATE(balance) ON billing.invoices TO billing_runtime;
+        - sqlFile:
+            path: 019_payment_receipts.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: billing-021-encounter-admission-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT, INSERT ON billing.encounter_write_gates, billing.encounter_freezes, billing.manual_charge_admissions TO billing_runtime; GRANT UPDATE(freeze_state,freeze_operation_id,version,updated_at) ON billing.encounter_write_gates TO billing_runtime; GRANT UPDATE(state,settlement) ON billing.encounter_freezes TO billing_runtime; GRANT UPDATE(state,resolved_at) ON billing.manual_charge_admissions TO billing_runtime;
