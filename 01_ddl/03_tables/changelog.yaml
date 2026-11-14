@@ -36,3 +36,93 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: DROP TABLE IF EXISTS billing.procedure_prices
+
+  - changeSet:
+      id: billing-005-create-idempotency-records
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE billing.idempotency_records (
+                  record_id UUID PRIMARY KEY,
+                  idempotency_key UUID NOT NULL,
+                  actor_id VARCHAR(255) NOT NULL,
+                  operation_name VARCHAR(120) NOT NULL,
+                  resource_key VARCHAR(255) NOT NULL,
+                  request_hash VARCHAR(64) NOT NULL,
+                  response_status INTEGER NOT NULL,
+                  response_headers JSONB NOT NULL,
+                  response_body JSONB NOT NULL,
+                  created_at TIMESTAMPTZ NOT NULL,
+                  expires_at TIMESTAMPTZ NOT NULL,
+
+                  CONSTRAINT uq_billing_idempotency_scope
+                      UNIQUE (
+                          actor_id,
+                          operation_name,
+                          resource_key,
+                          idempotency_key
+                      ),
+                  CONSTRAINT chk_billing_idempotency_actor
+                      CHECK (length(trim(actor_id)) > 0),
+                  CONSTRAINT chk_billing_idempotency_operation
+                      CHECK (length(trim(operation_name)) > 0),
+                  CONSTRAINT chk_billing_idempotency_resource
+                      CHECK (length(trim(resource_key)) > 0),
+                  CONSTRAINT chk_billing_idempotency_hash
+                      CHECK (request_hash ~ '^[0-9a-f]{64}$'),
+                  CONSTRAINT chk_billing_idempotency_status
+                      CHECK (response_status BETWEEN 200 AND 599),
+                  CONSTRAINT chk_billing_idempotency_retention
+                      CHECK (
+                          expires_at >= created_at + INTERVAL '7 days'
+                      )
+              );
+
+              CREATE INDEX idx_billing_idempotency_expires
+                  ON billing.idempotency_records (expires_at);
+      rollback:
+        - sql:
+            sql: |
+              DROP TABLE IF EXISTS billing.idempotency_records;
+
+  - changeSet:
+      id: billing-006-create-additional-price-rules
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE billing.additional_price_rules (
+                  rule_id UUID PRIMARY KEY,
+                  rule_code VARCHAR(80) NOT NULL,
+                  item_type VARCHAR(32) NOT NULL,
+                  unit_price NUMERIC(14,2) NOT NULL,
+                  currency VARCHAR(3) NOT NULL DEFAULT 'COP',
+                  requires_approval BOOLEAN NOT NULL DEFAULT FALSE,
+                  valid_from TIMESTAMPTZ NOT NULL,
+                  valid_to TIMESTAMPTZ,
+                  status VARCHAR(8) NOT NULL DEFAULT 'ACTIVE',
+                  version INTEGER NOT NULL,
+                  created_by UUID NOT NULL,
+                  created_at TIMESTAMPTZ NOT NULL,
+                  updated_at TIMESTAMPTZ NOT NULL,
+                  CONSTRAINT chk_additional_rule_code CHECK (length(btrim(rule_code)) > 0),
+                  CONSTRAINT chk_additional_rule_type CHECK (item_type IN (
+                      'ADDITIONAL_MATERIAL', 'ADDITIONAL_PROCEDURE',
+                      'COMPLEXITY_ADJUSTMENT', 'OTHER_AUTHORIZED_CHARGE')),
+                  CONSTRAINT chk_additional_rule_price CHECK (unit_price > 0),
+                  CONSTRAINT chk_additional_rule_currency CHECK (currency = 'COP'),
+                  CONSTRAINT chk_additional_rule_validity CHECK (valid_to IS NULL OR valid_to > valid_from),
+                  CONSTRAINT chk_additional_rule_version CHECK (version >= 1),
+                  CONSTRAINT chk_additional_rule_status CHECK (status IN ('ACTIVE', 'INACTIVE')),
+                  CONSTRAINT uq_additional_rule_version UNIQUE (rule_code, version),
+                  CONSTRAINT ex_additional_rule_active_validity EXCLUDE USING GIST (
+                      rule_code WITH =,
+                      tstzrange(valid_from, valid_to, '[)') WITH &&
+                  ) WHERE (status = 'ACTIVE')
+              );
+      rollback:
+        - sql:
+            sql: DROP TABLE IF EXISTS billing.additional_price_rules;
