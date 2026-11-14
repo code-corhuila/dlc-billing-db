@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: billing-001-create-schema
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: CREATE SCHEMA IF NOT EXISTS billing
+      rollback:
+        - sql:
+            sql: SELECT 1
