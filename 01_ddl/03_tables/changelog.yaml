@@ -1,0 +1,271 @@
+databaseChangeLog:
+  - changeSet:
+      id: billing-002-create-procedure-prices
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE billing.procedure_prices (
+                  price_id UUID PRIMARY KEY,
+                  procedure_code VARCHAR(80) NOT NULL,
+                  name VARCHAR(255) NOT NULL,
+                  base_price NUMERIC(14,2) NOT NULL,
+                  currency VARCHAR(3) NOT NULL DEFAULT 'COP',
+                  valid_from TIMESTAMPTZ NOT NULL,
+                  valid_to TIMESTAMPTZ,
+                  status VARCHAR(8) NOT NULL DEFAULT 'ACTIVE',
+                  version INTEGER NOT NULL,
+                  created_by UUID NOT NULL,
+                  created_at TIMESTAMPTZ NOT NULL,
+                  updated_at TIMESTAMPTZ NOT NULL,
+
+                  CONSTRAINT chk_procedure_price_positive
+                      CHECK (base_price > 0),
+                  CONSTRAINT chk_procedure_price_currency
+                      CHECK (currency = 'COP'),
+                  CONSTRAINT chk_procedure_price_validity
+                      CHECK (valid_to IS NULL OR valid_to > valid_from),
+                  CONSTRAINT chk_procedure_price_version
+                      CHECK (version >= 1),
+                  CONSTRAINT chk_procedure_price_status
+                      CHECK (status IN ('ACTIVE', 'INACTIVE')),
+                  CONSTRAINT uq_procedure_price_version
+                      UNIQUE (procedure_code, version)
+              );
+      rollback:
+        - sql:
+            sql: DROP TABLE IF EXISTS billing.procedure_prices
+
+  - changeSet:
+      id: billing-005-create-idempotency-records
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE billing.idempotency_records (
+                  record_id UUID PRIMARY KEY,
+                  idempotency_key UUID NOT NULL,
+                  actor_id VARCHAR(255) NOT NULL,
+                  operation_name VARCHAR(120) NOT NULL,
+                  resource_key VARCHAR(255) NOT NULL,
+                  request_hash VARCHAR(64) NOT NULL,
+                  response_status INTEGER NOT NULL,
+                  response_headers JSONB NOT NULL,
+                  response_body JSONB NOT NULL,
+                  created_at TIMESTAMPTZ NOT NULL,
+                  expires_at TIMESTAMPTZ NOT NULL,
+
+                  CONSTRAINT uq_billing_idempotency_scope
+                      UNIQUE (
+                          actor_id,
+                          operation_name,
+                          resource_key,
+                          idempotency_key
+                      ),
+                  CONSTRAINT chk_billing_idempotency_actor
+                      CHECK (length(trim(actor_id)) > 0),
+                  CONSTRAINT chk_billing_idempotency_operation
+                      CHECK (length(trim(operation_name)) > 0),
+                  CONSTRAINT chk_billing_idempotency_resource
+                      CHECK (length(trim(resource_key)) > 0),
+                  CONSTRAINT chk_billing_idempotency_hash
+                      CHECK (request_hash ~ '^[0-9a-f]{64}$'),
+                  CONSTRAINT chk_billing_idempotency_status
+                      CHECK (response_status BETWEEN 200 AND 599),
+                  CONSTRAINT chk_billing_idempotency_retention
+                      CHECK (
+                          expires_at >= created_at + INTERVAL '7 days'
+                      )
+              );
+
+              CREATE INDEX idx_billing_idempotency_expires
+                  ON billing.idempotency_records (expires_at);
+      rollback:
+        - sql:
+            sql: |
+              DROP TABLE IF EXISTS billing.idempotency_records;
+
+  - changeSet:
+      id: billing-006-create-additional-price-rules
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE billing.additional_price_rules (
+                  rule_id UUID PRIMARY KEY,
+                  rule_code VARCHAR(80) NOT NULL,
+                  item_type VARCHAR(32) NOT NULL,
+                  unit_price NUMERIC(14,2) NOT NULL,
+                  currency VARCHAR(3) NOT NULL DEFAULT 'COP',
+                  requires_approval BOOLEAN NOT NULL DEFAULT FALSE,
+                  valid_from TIMESTAMPTZ NOT NULL,
+                  valid_to TIMESTAMPTZ,
+                  status VARCHAR(8) NOT NULL DEFAULT 'ACTIVE',
+                  version INTEGER NOT NULL,
+                  created_by UUID NOT NULL,
+                  created_at TIMESTAMPTZ NOT NULL,
+                  updated_at TIMESTAMPTZ NOT NULL,
+                  CONSTRAINT chk_additional_rule_code CHECK (length(btrim(rule_code)) > 0),
+                  CONSTRAINT chk_additional_rule_type CHECK (item_type IN (
+                      'ADDITIONAL_MATERIAL', 'ADDITIONAL_PROCEDURE',
+                      'COMPLEXITY_ADJUSTMENT', 'OTHER_AUTHORIZED_CHARGE')),
+                  CONSTRAINT chk_additional_rule_price CHECK (unit_price > 0),
+                  CONSTRAINT chk_additional_rule_currency CHECK (currency = 'COP'),
+                  CONSTRAINT chk_additional_rule_validity CHECK (valid_to IS NULL OR valid_to > valid_from),
+                  CONSTRAINT chk_additional_rule_version CHECK (version >= 1),
+                  CONSTRAINT chk_additional_rule_status CHECK (status IN ('ACTIVE', 'INACTIVE')),
+                  CONSTRAINT uq_additional_rule_version UNIQUE (rule_code, version),
+                  CONSTRAINT ex_additional_rule_active_validity EXCLUDE USING GIST (
+                      rule_code WITH =,
+                      tstzrange(valid_from, valid_to, '[)') WITH &&
+                  ) WHERE (status = 'ACTIVE')
+              );
+      rollback:
+        - sql:
+            sql: DROP TABLE IF EXISTS billing.additional_price_rules;
+
+  - changeSet:
+      id: billing-008-billable-snapshots
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 008_billable_snapshots.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sql:
+            sql: DROP TABLE billing.billable_items; DROP TABLE billing.encounter_accounts;
+
+  - changeSet:
+      id: billing-010-invoice-read-storage
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 010_invoice_storage.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sql:
+            sql: DROP TABLE billing.invoice_items; DROP TABLE billing.invoices; ALTER TABLE billing.billable_items DROP CONSTRAINT uq_billable_item_patient;
+
+  - changeSet:
+      id: billing-012-invoice-draft-allocation
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 012_invoice_draft_allocation.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sql:
+            sql: DROP TRIGGER protect_billable_allocation ON billing.billable_items; DROP FUNCTION billing.protect_billable_allocation(); DROP TABLE billing.invoice_appointment_validations;
+
+  - changeSet:
+      id: billing-014-invoice-issuance-storage
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 014_invoice_issuance.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sql:
+            sql: DROP TRIGGER protect_invoice_issuance ON billing.invoices; DROP FUNCTION billing.protect_invoice_issuance(); DROP TABLE billing.invoice_issuances; DROP TABLE billing.outbox_events; ALTER TABLE billing.billable_items DROP COLUMN pricing_authority_role;
+
+  - changeSet:
+      id: billing-016-outbox-deliveries
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 016_outbox_deliveries.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sql:
+            sql: DROP TRIGGER schedule_outbox_delivery ON billing.outbox_events; DROP FUNCTION billing.schedule_outbox_delivery(); DROP TABLE billing.outbox_deliveries; DROP FUNCTION billing.protect_outbox_delivery();
+
+  - changeSet:
+      id: billing-018-payment-history
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 018_payments.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: billing-020-encounter-admissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 020_encounter_admissions.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: billing-022-clinical-source-storage
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 022_clinical_sources.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: billing-024-manual-charge-storage
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 024_manual_charges.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: billing-026-price-corrections
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 026_price_corrections.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: billing-028-legacy-manual-price-guard
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 028_legacy_manual_price_guard.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: billing-029-financial-correlations
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 029_financial_correlations.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: billing-031-financial-boundaries
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 031_financial_boundaries.sql
+            relativeToChangelogFile: true
+            splitStatements: false

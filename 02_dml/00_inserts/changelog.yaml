@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: billing-030-default-payment-methods
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 030_payment_methods.sql
+            relativeToChangelogFile: true

@@ -1,0 +1,111 @@
+databaseChangeLog:
+  - changeSet:
+      id: billing-007-runtime-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sqlFile:
+            path: 007_runtime_permissions.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sqlFile:
+            path: 007_runtime_permissions_rollback.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: billing-009-billable-snapshot-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT, INSERT ON billing.encounter_accounts, billing.billable_items TO billing_runtime;
+      rollback:
+        - sql:
+            sql: REVOKE SELECT, INSERT ON billing.encounter_accounts, billing.billable_items FROM billing_runtime;
+
+  - changeSet:
+      id: billing-011-invoice-read-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT ON billing.invoices, billing.invoice_items TO billing_runtime;
+      rollback:
+        - sql:
+            sql: REVOKE SELECT ON billing.invoices, billing.invoice_items FROM billing_runtime;
+
+  - changeSet:
+      id: billing-013-invoice-draft-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT INSERT ON billing.invoices, billing.invoice_items TO billing_runtime; GRANT SELECT, INSERT ON billing.invoice_appointment_validations TO billing_runtime; GRANT UPDATE(status,version,updated_at) ON billing.billable_items TO billing_runtime;
+      rollback:
+        - sql:
+            sql: REVOKE INSERT ON billing.invoices, billing.invoice_items FROM billing_runtime; REVOKE SELECT, INSERT ON billing.invoice_appointment_validations FROM billing_runtime; REVOKE UPDATE(status,version,updated_at) ON billing.billable_items FROM billing_runtime;
+
+  - changeSet:
+      id: billing-015-invoice-issuance-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT, INSERT ON billing.outbox_events, billing.invoice_issuances TO billing_runtime; GRANT UPDATE(status,version,updated_at,invoice_number,issued_at) ON billing.invoices TO billing_runtime;
+      rollback:
+        - sql:
+            sql: REVOKE SELECT, INSERT ON billing.outbox_events, billing.invoice_issuances FROM billing_runtime; REVOKE UPDATE(status,version,updated_at,invoice_number,issued_at) ON billing.invoices FROM billing_runtime;
+
+  - changeSet:
+      id: billing-017-outbox-delivery-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT, INSERT ON billing.outbox_deliveries TO billing_runtime; GRANT UPDATE(status,attempts,next_attempt_at,published_at,last_error_code) ON billing.outbox_deliveries TO billing_runtime;
+      rollback:
+        - sql:
+            sql: REVOKE ALL ON billing.outbox_deliveries FROM billing_runtime;
+
+  - changeSet:
+      id: billing-019-payment-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT ON billing.payment_methods TO billing_runtime; GRANT SELECT, INSERT ON billing.payments TO billing_runtime; GRANT UPDATE(balance) ON billing.invoices TO billing_runtime;
+        - sqlFile:
+            path: 019_payment_receipts.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: billing-021-encounter-admission-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT, INSERT ON billing.encounter_write_gates, billing.encounter_freezes, billing.manual_charge_admissions TO billing_runtime; GRANT UPDATE(freeze_state,freeze_operation_id,version,updated_at) ON billing.encounter_write_gates TO billing_runtime; GRANT UPDATE(state,settlement) ON billing.encounter_freezes TO billing_runtime; GRANT UPDATE(state,resolved_at) ON billing.manual_charge_admissions TO billing_runtime;
+
+  - changeSet:
+      id: billing-023-clinical-source-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT, INSERT ON billing.clinical_inbox, billing.clinical_procedures, billing.clinical_sources, billing.clinical_consultations, billing.clinical_declarations, billing.procedure_charge_receipts, billing.encounter_charge_receipts TO billing_runtime; GRANT UPDATE(projected_at) ON billing.clinical_inbox TO billing_runtime;
+
+  - changeSet:
+      id: billing-025-manual-charge-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT, INSERT ON billing.manual_charges TO billing_runtime; GRANT UPDATE(status,declared_procedure_ids,declared_manual_charge_ids,freeze_state,freeze_operation_id,version,updated_at) ON billing.encounter_accounts TO billing_runtime;
+
+  - changeSet:
+      id: billing-027-price-correction-permissions
+      author: di-lucca
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: GRANT SELECT ON billing.price_corrections TO billing_runtime; GRANT EXECUTE ON FUNCTION billing.correct_price(UUID,UUID,NUMERIC,TEXT,INTEGER) TO billing_runtime;
